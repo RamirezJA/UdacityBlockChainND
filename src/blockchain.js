@@ -209,7 +209,15 @@ class Blockchain {
   getStarsByWalletAddress(address) {
     let self = this
     let stars = []
-    return new Promise((resolve, reject) => {})
+    return new Promise((resolve, reject) => {
+      // Method derived from: https://knowledge.udacity.com/questions/282668
+      self.chain.forEach(async (block) => {
+        let data = await block.getBData()
+        if (data.address === address) stars.push(data)
+      })
+      //resolve stars
+      resolve(stars)
+    })
   }
 
   /**
