@@ -11,6 +11,7 @@
 const SHA256 = require('crypto-js/sha256')
 const BlockClass = require('./block.js')
 const bitcoinMessage = require('bitcoinjs-message')
+const { verify, sign } = require('bitcoinjs-message')
 
 class Blockchain {
   /**
@@ -62,7 +63,28 @@ class Blockchain {
    */
   _addBlock(block) {
     let self = this
-    return new Promise(async (resolve, reject) => {})
+    return new Promise(async (resolve, reject) => {
+      //assign height
+      block.height = self.height + 1
+      //assign timestamp
+      block.time = new Date().getTime().toString().slice(0, -3)
+
+      //check if its the GB
+      if (self.height == -1) {
+        //No hash its the GB
+        block.previousBlockHash = null
+      } else {
+        //assign prevB Hash
+        block.previousBlockHash = this.hash
+      }
+      //assign Current Blocks Hash
+      block.hash = SHA256(JSON.stringify(block)).toString()
+      //push block
+      self.chain.push(block)
+      //update height
+      this.height += 1
+      resolve(block)
+    })
   }
 
   /**
@@ -74,7 +96,13 @@ class Blockchain {
    * @param {*} address
    */
   requestMessageOwnershipVerification(address) {
-    return new Promise((resolve) => {})
+    return new Promise((resolve) => {
+      let message = `${address}:${new Date()
+        .getTime()
+        .toString()
+        .slice(0, -3)}:starRegistry`
+      resolve(message)
+    })
   }
 
   /**
@@ -96,7 +124,43 @@ class Blockchain {
    */
   submitStar(address, message, signature, star) {
     let self = this
-    return new Promise(async (resolve, reject) => {})
+    return new Promise(async (resolve, reject) => {
+      //Get time from message
+      let messageTime = parseInt(message.split(':')[1])
+      //Get current Time
+      let currentTime = parseInt(new Date().getTime().toString().slice(0, -3))
+      //5 minute limit const
+      const timeLimit = 5 * 60
+      //Check if less than 5 min btween message/currTime
+      if (currentTime - messageTime > timeLimit) {
+        //if >5min reject
+        reject(new Error('Time elapsed greater than 5 min'))
+      }
+      //set VerifiedMessage to false
+      var verifiedMessage = false
+      //Verify message with wallet address and signature
+      try {
+        verifiedMessage = bitcoinMessage.verify(message, address, signature)
+      } catch (error) {
+        Error(error)
+      }
+      //Create the Block
+      const starBlock = new BlockClass.Block({
+        address: address,
+        message: message,
+        signature: signature,
+        star: star,
+      })
+      //check if not verifieMessage
+      if (!verifiedMessage) {
+        reject(starBlock)
+        return
+      }
+      // add starBlock to chain
+      await this._addBlock(starBlock)
+      //Resolve
+      resolve(starBlock)
+    })
   }
 
   /**
@@ -107,7 +171,16 @@ class Blockchain {
    */
   getBlockByHash(hash) {
     let self = this
-    return new Promise((resolve, reject) => {})
+    return new Promise((resolve, reject) => {
+      //search chain for block with hash
+      let filteredBlock = self.chain.filter((value) => value.hash === hash)[0]
+      //to resolve or not
+      if (filteredBlock) {
+        resolve(filteredBlock)
+      } else {
+        resolve(null)
+      }
+    })
   }
 
   /**
