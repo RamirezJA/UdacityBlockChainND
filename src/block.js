@@ -39,17 +39,23 @@ class Block {
     return new Promise((resolve, reject) => {
       // Save in auxiliary variable the current block hash
       let currentHash = self.hash
-      // Recalculate the hash of the Block
-      const recalculationHash = SHA256(JSON.stringify(self)).toString()
-      // Comparing if the hashes changed
-      if (currentHash != recalculationHash) {
-        // Returning the Block is not valid
 
-        console.log('Invalid hashes dont match')
+      // Make the hash of the block as null.
+      self.hash = null
+
+      // Recalculate the hash value again and store it in a different variable.
+      let recalcHash = SHA256(JSON.stringify(self)).toString()
+      // Assign the original hash value to the hash property of the block.
+      self.hash = currentHash
+      // Comparing if the hashes changed
+      if (currentHash != recalcHash) {
+        // Returning the Block is not valid
+        console.log('Invalid block hash currentHash != recalcHash')
         resolve(false)
       }
       // Returning the Block is valid
       resolve(true)
+      //Finished
     })
   }
 
@@ -66,17 +72,19 @@ class Block {
     // Getting the encoded data saved in the Block
     let self = this
     // Decoding the data to retrieve the JSON representation of the object
-    const decodingData = hex2ascii(self.body)
+    const decodedData = hex2ascii(self.body)
     // Parse the data to an object to be retrieve.
-    const parsedBlock = JSON.parse(decodingData)
+    const parseData = JSON.parse(decodedData)
+
     // Resolve with the data if the object isn't the Genesis block
     return new Promise((resolve, reject) => {
-      if (parsedBlock.data == 'Genesis Block') {
-        reject('Genesis Block')
+      if (parseData.data == 'Genesis Block') {
+        reject('This is Genesis Block')
       }
-      resolve(parsedBlock)
+      resolve(parseData)
     })
   }
+  //finished seems right
 }
 
 module.exports.Block = Block // Exposing the Block class as a module
