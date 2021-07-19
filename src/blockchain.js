@@ -229,7 +229,35 @@ class Blockchain {
   validateChain() {
     let self = this
     let errorLog = []
-    return new Promise(async (resolve, reject) => {})
+    return new Promise(async (resolve, reject) => {
+      //loop over blocks
+      for (let i = 0; i < this.chain.length; i++) {
+        //create current block
+        const currentBlock = this.chain[i]
+        //check if valid
+        if (!(await currentBlock.validate())) {
+          errorLog.push({
+            error: 'Failed Validation Process',
+            block: currentBlock,
+          })
+        }
+        //avoid genesis block
+        // derieved code from https://knowledge.udacity.com/questions/614073
+        if (i === 0) continue
+
+        //compare currentBlock vs previousBlock
+
+        const previousBlock = this.chain[i - 1]
+        if (currentBlock.previousBlockHash !== previousBlock.hash) {
+          errorLog.push({
+            error: 'Previous block hash does not match',
+            block: currentBlock,
+          })
+        }
+      }
+      //Resolve with errors
+      resolve(errorLog)
+    })
   }
 }
 
